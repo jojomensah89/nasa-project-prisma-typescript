@@ -1,23 +1,17 @@
 import express, { Express, Request, Response, Application } from "express";
 import morgan from "morgan";
 import helmet from "helmet";
-import { PrismaClient } from "@prisma/client";
+import v1Router from "./routes/v1Router";
 
-const prisma = new PrismaClient();
 
 const app = express();
 
 app.use(morgan("dev"));
 // app.use(morgan("combined"));
 app.use(helmet());
+app.use("/v1", v1Router);
 
-
-app.get("/", async (req: Request, res: Response) => {
-  const allLaunches= await prisma.launches.findMany();
-
-  return res.status(200).json(allLaunches);
+app.get("/", (req: Request, res: Response) => {
+  res.send("Express + TypeScript  Nasa Launches Server");
 });
-
 export default app;
-
-
