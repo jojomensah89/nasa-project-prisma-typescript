@@ -11,16 +11,19 @@ model launches {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   v            Int      @map("__v")
   customers    String[]
-  flightNumber Int
+  flightNumber Int      @unique
   launchDate   DateTime @db.Date
   mission      String
   rocket       String
   success      Boolean?
   upcoming     Boolean
+  target       planets?  @relation(fields: [planetId], references: [id])
+  planetId     String? @db.ObjectId
 }
 
 model planets {
-  id         String @id @default(auto()) @map("_id") @db.ObjectId
-  v          Int    @map("__v")
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  v          Int        @map("__v")
   keplerName String
+  launches   launches[]
 }

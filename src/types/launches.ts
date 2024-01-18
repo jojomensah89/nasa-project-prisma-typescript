@@ -8,3 +8,8 @@ export interface Launch {
   upcoming: boolean;
   success: boolean;
 }
+
+export interface PaginationQuery {
+  page?: number;
+  limit?: number;
+}

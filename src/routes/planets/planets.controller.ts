@@ -1,4 +1,4 @@
-import express, { Express, Request, Response, Application } from "express";
+import  { Request, Response, } from "express";
 
 import { getAllPlanets } from "../../models/planets.model";
 
