@@ -5,6 +5,11 @@ const prisma = new PrismaClient();
 
 let DEFAULT_FLIGHT_NUMBER = 100;
 
+async function existsLaunchWithId(launchId: number) {
+  return await prisma.launches.findFirst({
+    where: { flightNumber: launchId },
+  });
+}
 async function getLatestFlightNumber() {
   try {
     const latestLaunch = await prisma.launches.findFirst({
@@ -23,25 +28,6 @@ async function getLatestFlightNumber() {
     throw new Error("Failed to retrieve the latest flight number");
   }
 }
-// async function saveLaunch(launch: Launch) {
-//   try {
-//     const planet = await prisma.planets.findFirst({
-//       where: { keplerName: launch.target },
-//     });
-//     if (!planet) {
-//       throw new Error("No matching planet found");
-//     }
-//     await prisma.launches.upsert({
-//       where: {
-//         flightNumber: launch.flightNumber,
-//       },
-//       upsert: { ...launch },
-//       create: { ...launch },
-//     });
-//   } catch (err) {
-//     console.error(`Could not save launch ${err}`);
-//   }
-// }
 
 async function getAllLaunches(skip: number, take: number) {
   try {
@@ -58,32 +44,37 @@ async function getAllLaunches(skip: number, take: number) {
     console.error("Error fetching launches:", error);
   }
 }
-
 async function scheduleNewLaunch(launch: Launch) {
-  const planet = await prisma.planets.findFirst({
-    where: { keplerName: launch.target },
-  });
-  if (!planet) {
-    throw new Error("No mathcing planet found");
+  try {
+    const planet = await prisma.planets.findFirst({
+      where: { keplerName: launch.target },
+    });
+
+    if (!planet) {
+      throw new Error(`No matching planet found for target: ${launch.target}`);
+    }
+
+    const newFlightNumber = (await getLatestFlightNumber()) + 1;
+
+    const newLaunchData = {
+      ...launch,
+      success: true,
+      upcoming: true,
+      v: 0,
+      customers: ["Zero to Mastery", "NASA"],
+      flightNumber: newFlightNumber,
+      target: { connect: { id: planet.id } },
+    };
+
+    const newLaunch = await prisma.launches.create({
+      data: newLaunchData,
+    });
+
+    return newLaunch;
+  } catch (error) {
+    console.error(`Error scheduling new launch: ${error}`);
+    throw error; // Re-throw the error to propagate it further if needed
   }
-  const newFlightNumber = (await getLatestFlightNumber()) + 1;
-
-  const newLaunchData = {
-    ...launch,
-    success: true,
-    upcoming: true,
-    v: 0,
-    customers: ["Zero to Mastery", "NASA"],
-    flightNumber: newFlightNumber,
-    target: { connect: { id: planet.id } },
-  };
-  //   saveLaunch(newLaunchData);
-
-  const newLaunch = await prisma.launches.create({
-    data: newLaunchData,
-  });
-
-  return newLaunch;
 }
 
 async function abortLaunchById(launchId: number) {
@@ -97,9 +88,15 @@ async function abortLaunchById(launchId: number) {
         success: false,
       },
     });
+    return aborted;
   } catch (error) {
     console.error("Failed to abort to launch", error);
   }
 }
 
-export { getAllLaunches, scheduleNewLaunch, abortLaunchById };
+export {
+  getAllLaunches,
+  scheduleNewLaunch,
+  abortLaunchById,
+  existsLaunchWithId,
+};

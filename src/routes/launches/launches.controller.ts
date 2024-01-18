@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
-import { getAllLaunches, scheduleNewLaunch } from "../../models/launches.model";
+import {
+  getAllLaunches,
+  scheduleNewLaunch,
+  abortLaunchById,
+  existsLaunchWithId,
+} from "../../models/launches.model";
 import { getPagination } from "../../services/query";
 async function httpGetAllLaunches(req: Request, res: Response) {
   const { skip, take } = getPagination(req.query);
@@ -39,5 +44,24 @@ async function httpAddNewLaunch(req: Request, res: Response) {
 
   return res.status(201).json(newLaunch);
 }
+async function httpAbortLaunch(req: Request, res: Response) {
+  const launchId = Number(req.params.id);
 
-export { httpGetAllLaunches, httpAddNewLaunch };
+  //if launch doesn't exist
+  const existsLanuch = await existsLaunchWithId(launchId);
+  if (!existsLanuch)
+    return res.status(404).json({
+      error: "Launch not found",
+    });
+
+  // if launch does exist
+  const aborted = await abortLaunchById(launchId);
+  if (!aborted) {
+    return res.status(400).json({
+      error: "Launch not aborted",
+    });
+  }
+  return res.status(200).json({ ok: true });
+}
+
+export { httpGetAllLaunches, httpAddNewLaunch, httpAbortLaunch };
